@@ -1,0 +1,40 @@
+name: Music Assistant Alexa Skill
+version: 0.1.0
+slug: music_assistant_alexa
+description: Alexa-Skill-Dienst für Music Assistant
+url: https://github.com/firebreakHD/MA_Alexa
+arch:
+  - amd64
+  - aarch64
+startup: application
+boot: auto
+init: false
+ports:
+  5000/tcp: 5000
+ports_description:
+  5000/tcp: Skill-API und geschützte Einrichtung
+webui: http://[HOST]:[PORT:5000]/setup
+options:
+  skill_hostname: ""
+  ma_hostname: ""
+  app_username: ""
+  app_password: ""
+  locale: de-DE
+  aws_region: eu-west-1
+  ma_api_url: ""
+  ma_api_token: ""
+  skill_id: ""
+  skip_url_validation: false
+  enable_apl: false
+schema:
+  skill_hostname: str
+  ma_hostname: str
+  app_username: str
+  app_password: password
+  locale: str
+  aws_region: str
+  ma_api_url: str
+  ma_api_token: password
+  skill_id: str
+  skip_url_validation: bool
+  enable_apl: bool
