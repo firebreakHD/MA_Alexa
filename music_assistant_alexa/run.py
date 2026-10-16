@@ -80,8 +80,21 @@ def caddyfile(skill_host: str, ma_host: str, ma_target: str, email: str) -> str:
     if email:
         lines.append(f"    email {email}")
     tls = ["    tls {", "        issuer acme {", "            disable_http_challenge", "        }", "    }"]
-    lines.extend(["}", "", f"{skill_host} {{", *tls, "    reverse_proxy 127.0.0.1:5000", "}"])
-    if ma_host:
+    lines.extend(["}", "", f"{skill_host} {{", *tls])
+    if ma_host == skill_host:
+        lines.extend([
+            "    @music_stream path /flow/* /single/* /source/* /command/* /announcement/* /live_announcement/*",
+            "    handle @music_stream {",
+            f"        reverse_proxy {ma_target}",
+            "    }",
+            "    handle {",
+            "        reverse_proxy 127.0.0.1:5000",
+            "    }",
+        ])
+    else:
+        lines.append("    reverse_proxy 127.0.0.1:5000")
+    lines.append("}")
+    if ma_host and ma_host != skill_host:
         lines.extend(["", f"{ma_host} {{", *tls, f"    reverse_proxy {ma_target}", "}"])
     return "\n".join(lines) + "\n"
 
@@ -90,7 +103,7 @@ def update_ddnss(key: str, hosts: list[str]) -> None:
     params = urllib.parse.urlencode({"key": key, "host": ",".join(hosts)})
     request = urllib.request.Request(
         f"https://ip4.ddnss.de/upd.php?{params}",
-        headers={"User-Agent": "MA-Alexa-Addon/0.2.0"},
+        headers={"User-Agent": "MA-Alexa-Addon/0.2.1"},
     )
     try:
         with urllib.request.urlopen(request, timeout=15) as response:
@@ -159,8 +172,6 @@ def main() -> int:
 
     skill_host = hostname(options.get("skill_hostname"), "skill_hostname", required=True)
     ma_host = hostname(options.get("ma_hostname"), "ma_hostname")
-    if ma_host and ma_host == skill_host:
-        fail("'skill_hostname' und 'ma_hostname' müssen verschieden sein.")
     ma_target = stream_target(options.get("ma_stream_upstream")) if ma_host else ""
     for key in ("app_username", "app_password"):
         if not str(options.get(key, "")).strip():
@@ -205,7 +216,7 @@ def main() -> int:
         XDG_CONFIG_HOME=str(CADDY_DIR / "config"),
     )
     ddnss_key = str(options.get("ddnss_host_key", "")).strip()
-    return run_processes(env, config, ddnss_key, [host for host in (skill_host, ma_host) if host])
+    return run_processes(env, config, ddnss_key, list(dict.fromkeys(host for host in (skill_host, ma_host) if host)))
 
 
 if __name__ == "__main__":

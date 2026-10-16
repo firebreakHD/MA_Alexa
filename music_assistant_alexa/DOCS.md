@@ -4,7 +4,7 @@ Dieses Add-on startet den Music-Assistant-Alexa-Skill und einen Caddy-HTTPS-Prox
 
 ## Voraussetzungen
 
-- Eine öffentlich erreichbare DNS-Adresse für den Skill und, für Echo-Geräte ohne Bildschirm, eine zweite für den Music-Assistant-Stream. Beide dürfen auf dieselbe öffentliche IP zeigen. In `ddnss.de` müssen beide Hostnamen angelegt sein.
+- Eine öffentlich erreichbare DNS-Adresse für Skill und Musikstream, z. B. `mpwohnen.ddnss.de`. Ein zweiter Hostname ist nicht nötig. Wenn gewünscht, kann der Stream auch einen eigenen Hostnamen erhalten.
 - Router-Portweiterleitung **TCP 443 → Home-Assistant-Server 192.168.1.184**, sofern dieser Port nicht schon ein anderer Dienst belegt. Caddy verwendet die TLS-ALPN-Prüfung auf Port 443; Port 80 wird für dieses Add-on nicht benötigt. Kein Port 5000 oder 8097 ins Internet weiterleiten.
 - Für die automatische ddnss.de-IP-Aktualisierung den **Host-Key** im Add-on-Feld `ddnss_host_key` hinterlegen. Wenn ddnss.de bereits anderweitig aktualisiert wird, dieses Feld leer lassen.
 - Ein Amazon-Developer-Konto und der [Alexa-Player-Provider](https://www.music-assistant.io/player-support/alexa/) in Music Assistant.
@@ -12,7 +12,7 @@ Dieses Add-on startet den Music-Assistant-Alexa-Skill und einen Caddy-HTTPS-Prox
 ## Add-on-Konfiguration
 
 - `skill_hostname`: öffentlicher Skill-Hostname, ohne `https://`, Port oder Pfad.
-- `ma_hostname`: anderer öffentlicher Hostname für den Music-Assistant-Stream. Für Echo ohne Bildschirm nötig.
+- `ma_hostname`: für den gemeinsamen Hostnamen denselben Wert wie bei `skill_hostname` eintragen. Dann werden nur die Music-Assistant-Stream-Pfade an Port 8097 weitergeleitet. Für Echo ohne Bildschirm nötig.
 - `ma_stream_upstream`: interne Stream-Adresse von Music Assistant, normalerweise `http://192.168.1.184:8097`. Nur zusammen mit `ma_hostname` nötig.
 - `app_username`, `app_password`: eigener Zugang für Setup und lokale Skill-API. Dasselbe Paar später in Music Assistant eintragen.
 - `acme_email`: E-Mail für Let's Encrypt; optional, aber empfohlen.
@@ -25,7 +25,7 @@ Dieses Add-on startet den Music-Assistant-Alexa-Skill und einen Caddy-HTTPS-Prox
 
 ## Ablauf
 
-1. Zwei ddnss.de-Hostnamen anlegen. Falls `mpwohnen.ddnss.de` schon für einen anderen öffentlichen Dienst verwendet wird, diesen Hostnamen nicht für den Skill übernehmen, ohne die bisherige Weiterleitung zu berücksichtigen.
+1. Einen ddnss.de-Hostnamen bereitstellen. Falls `mpwohnen.ddnss.de` schon für einen anderen öffentlichen Dienst verwendet wird, dessen bisherige Weiterleitung berücksichtigen.
 2. Add-on-Felder ausfüllen. In **Netzwerk** Host-Port 443 aktivieren und kontrollieren, dass er nicht schon durch ein anderes Add-on belegt ist. Port 5000 nur im lokalen Netz nutzen.
 3. Router TCP 443 an den Home-Assistant-Server weiterleiten. Add-on starten; Caddy schreibt Zertifikate dauerhaft unter `/data/caddy/`. Zertifikatsausstellung im Add-on-Protokoll prüfen.
 4. Lokal `http://192.168.1.184:5000/setup` öffnen, mit Add-on-Benutzername/-Passwort anmelden und die ASK-CLI-/Amazon-Schritte selbst durchführen. Amazon-Passwort und Codes werden nicht von Codex eingegeben.
