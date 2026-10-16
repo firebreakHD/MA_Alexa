@@ -1,30 +1,38 @@
 # Einrichtung
 
+Dieses Add-on startet den Music-Assistant-Alexa-Skill und einen Caddy-HTTPS-Proxy. Caddy beschafft und erneuert gültige Let's-Encrypt-Zertifikate automatisch. Das bereits installierte Home-Assistant-Let's-Encrypt-Add-on wird dafür nicht verändert oder benötigt: Es ist derzeit nur für `mpwohnen.ddnss.de` konfiguriert und erneuert Zertifikate nicht selbstständig.
+
 ## Voraussetzungen
 
-Der [Music-Assistant-Alexa-Provider](https://www.music-assistant.io/player-support/alexa/) benötigt einen extern erreichbaren Skill-Endpunkt mit gültigem HTTPS-Zertifikat und ein Amazon-Developer-Konto. Für Echo-Geräte ohne Bildschirm muss der Audio-Stream von Music Assistant (normalerweise Port 8097) ebenfalls über HTTPS erreichbar sein. Das Add-on öffnet selbst keine Router-Ports und richtet keinen Reverse-Proxy ein.
+- Eine öffentlich erreichbare DNS-Adresse für den Skill und, für Echo-Geräte ohne Bildschirm, eine zweite für den Music-Assistant-Stream. Beide dürfen auf dieselbe öffentliche IP zeigen. In `ddnss.de` müssen beide Hostnamen angelegt sein.
+- Router-Portweiterleitung **TCP 443 → Home-Assistant-Server 192.168.1.184**, sofern dieser Port nicht schon ein anderer Dienst belegt. Caddy verwendet die TLS-ALPN-Prüfung auf Port 443; Port 80 wird für dieses Add-on nicht benötigt. Kein Port 5000 oder 8097 ins Internet weiterleiten.
+- Für die automatische ddnss.de-IP-Aktualisierung den **Host-Key** im Add-on-Feld `ddnss_host_key` hinterlegen. Wenn ddnss.de bereits anderweitig aktualisiert wird, dieses Feld leer lassen.
+- Ein Amazon-Developer-Konto und der [Alexa-Player-Provider](https://www.music-assistant.io/player-support/alexa/) in Music Assistant.
 
 ## Add-on-Konfiguration
 
-- `skill_hostname`: öffentliche HTTPS-Domain für den Alexa-Skill, **ohne** `https://`, Port oder Pfad.
-- `ma_hostname`: öffentliche HTTPS-Domain für den Music-Assistant-Stream, für Echo ohne Bildschirm erforderlich.
-- `app_username`, `app_password`: Zugang für Weboberfläche und lokale API. Beide sind erforderlich. Dasselbe Paar später in Music Assistant eintragen.
-- `locale`: Sprache der Skill-Interaktion, z. B. `de-DE`.
-- `aws_region`: Region für die ASK-CLI, standardmäßig `eu-west-1`.
-- `ma_api_url`, `ma_api_token`: optional für Sprachbefehle „nächster/vorheriger Titel“; URL der Music-Assistant-WebSocket-API und gegebenenfalls ein MA-Token.
-- `skill_id`: nach der Skill-Erstellung optional eintragen und Add-on neu starten, damit nur der eigene Skill akzeptiert wird.
-- `skip_url_validation`, `enable_apl`: optionale Upstream-Funktionen; normalerweise ausgeschaltet lassen.
+- `skill_hostname`: öffentlicher Skill-Hostname, ohne `https://`, Port oder Pfad.
+- `ma_hostname`: anderer öffentlicher Hostname für den Music-Assistant-Stream. Für Echo ohne Bildschirm nötig.
+- `ma_stream_upstream`: interne Stream-Adresse von Music Assistant, normalerweise `http://192.168.1.184:8097`. Nur zusammen mit `ma_hostname` nötig.
+- `app_username`, `app_password`: eigener Zugang für Setup und lokale Skill-API. Dasselbe Paar später in Music Assistant eintragen.
+- `acme_email`: E-Mail für Let's Encrypt; optional, aber empfohlen.
+- `ddnss_host_key`: optionaler ddnss.de-Host-Key. Nicht in Chat, Screenshots oder Git teilen.
+- `locale`: Alexa-Sprache, z. B. `de-DE`.
+- `aws_region`: ASK-CLI-Region, normalerweise `eu-west-1`.
+- `ma_api_url`, `ma_api_token`: optional für „nächster/vorheriger Titel“.
+- `skill_id`: nach der Skill-Erstellung optional eintragen, um nur den eigenen Skill zu akzeptieren.
+- `skip_url_validation`, `enable_apl`: normalerweise ausgeschaltet lassen.
 
-## Reihenfolge
+## Ablauf
 
-1. Konfiguration speichern und Add-on starten.
-2. `http://HOME-ASSISTANT-IP:5000/setup` im lokalen Netz öffnen. Mit `app_username` und `app_password` anmelden.
-3. HTTPS-Reverse-Proxy von `skill_hostname` auf `HOME-ASSISTANT-IP:5000` einrichten. Er muss POST auf `/` durchlassen. Der Proxy sollte die geschützten Verwaltungsseiten nicht ohne weiteren Zugriffsschutz öffentlich anbieten.
-4. Für Echo ohne Bildschirm einen zweiten HTTPS-Reverse-Proxy von `ma_hostname` auf den Music-Assistant-Stream-Port 8097 einrichten.
-5. In `/setup` die ASK-CLI-Autorisierung und Skill-Erstellung durchführen. Amazon-Anmeldung und Codes selbst eingeben.
-6. In Music Assistant den Alexa-Player-Provider aktivieren: Skill-API-Adresse `http://HOME-ASSISTANT-IP:5000`, Add-on-Benutzername und Passwort; anschließend die Amazon-Kontodaten nach der [offiziellen Music-Assistant-Anleitung](https://www.music-assistant.io/player-support/alexa/) eintragen.
-7. `/status` prüfen. Ein Echo als Player auswählen und Wiedergabe testen. Falls Sprachbefehle „weiter/zurück“ gewünscht sind, die Zuordnung unter `/devices` vornehmen.
+1. Zwei ddnss.de-Hostnamen anlegen. Falls `mpwohnen.ddnss.de` schon für einen anderen öffentlichen Dienst verwendet wird, diesen Hostnamen nicht für den Skill übernehmen, ohne die bisherige Weiterleitung zu berücksichtigen.
+2. Add-on-Felder ausfüllen. In **Netzwerk** Host-Port 443 aktivieren und kontrollieren, dass er nicht schon durch ein anderes Add-on belegt ist. Port 5000 nur im lokalen Netz nutzen.
+3. Router TCP 443 an den Home-Assistant-Server weiterleiten. Add-on starten; Caddy schreibt Zertifikate dauerhaft unter `/data/caddy/`. Zertifikatsausstellung im Add-on-Protokoll prüfen.
+4. Lokal `http://192.168.1.184:5000/setup` öffnen, mit Add-on-Benutzername/-Passwort anmelden und die ASK-CLI-/Amazon-Schritte selbst durchführen. Amazon-Passwort und Codes werden nicht von Codex eingegeben.
+5. Im Alexa Developer Portal **Endpoint → HTTPS → Default Region** auf `https://SKILL_HOSTNAME/` setzen. Zertifikatstyp: vertrauenswürdiges Zertifikat einer Zertifizierungsstelle. Speichern und Modell bauen.
+6. In Music Assistant den Alexa-Player-Provider einrichten. Skill-API-Adresse: `http://192.168.1.184:5000`; Benutzername und Passwort wie im Add-on. Die übrigen Amazon-Schritte stehen in der [offiziellen Anleitung](https://www.music-assistant.io/player-support/alexa/).
+7. Über `/status` am lokalen Port 5000 prüfen und mit einem Echo Wiedergabe testen. Erst nach echtem HTTPS-Test den Endpunkt im Developer Portal als fertig betrachten.
 
-ASK-CLI-Daten liegen unter `/data/.ask`, Echo-Zuordnungen unter `/data/device_players.json`. Diese Daten überstehen Add-on-Neustarts und Updates. Add-on-Backups enthalten diese Daten und sollten geschützt aufbewahrt werden. Zugangsdaten werden nicht ins Git-Repository geschrieben.
+ASK-CLI-Daten liegen unter `/data/.ask`, Echo-Zuordnungen unter `/data/device_players.json`, Caddy-Daten unter `/data/caddy/`. Diese Pfade bleiben bei Add-on-Neustarts und Updates bestehen. Backups enthalten sensible Daten und müssen geschützt werden.
 
-Die Upstream-Skill-App ist experimentell. Dieses Repository verpackt sie, ersetzt aber weder Amazons Skill-Dienst noch den nötigen öffentlichen HTTPS-Zugang.
+Das Add-on kann keine Router-Ports oder ddnss.de-Hostnamen selbst anlegen. Bei Carrier-Grade-NAT oder bereits belegtem Port 443 ist ein anderer öffentlich erreichbarer HTTPS-Proxy erforderlich.

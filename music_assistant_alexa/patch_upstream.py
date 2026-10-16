@@ -7,7 +7,8 @@ source = Path("/app/src/app.py")
 old = "secret_keys = {'APP_USERNAME', 'APP_PASSWORD'}"
 new = (
     "secret_keys = {'APP_USERNAME', 'APP_PASSWORD', 'MA_API_TOKEN', "
-    "'app_username', 'app_password', 'ma_api_token'}"
+    "'app_username', 'app_password', 'ma_api_token', "
+    "'ddnss_host_key', 'acme_email'}"
 )
 content = source.read_text(encoding="utf-8")
 if content.count(old) != 1:

@@ -28,4 +28,4 @@ jobs:
           push: false
           build-args: |
             BUILD_ARCH=${{ matrix.arch }}
-            BUILD_VERSION=0.1.0
+            BUILD_VERSION=0.2.0

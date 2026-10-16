@@ -1,5 +1,5 @@
 name: Music Assistant Alexa Skill
-version: 0.1.0
+version: 0.2.0
 slug: music_assistant_alexa
 description: Alexa-Skill-Dienst für Music Assistant
 url: https://github.com/firebreakHD/MA_Alexa
@@ -11,8 +11,10 @@ boot: auto
 init: false
 ports:
   5000/tcp: 5000
+  443/tcp: 443
 ports_description:
   5000/tcp: Skill-API und geschützte Einrichtung
+  443/tcp: Öffentlicher HTTPS-Zugang für Alexa und Musikstream
 webui: http://[HOST]:[PORT:5000]/setup
 options:
   skill_hostname: ""
@@ -24,6 +26,9 @@ options:
   ma_api_url: ""
   ma_api_token: ""
   skill_id: ""
+  acme_email: ""
+  ma_stream_upstream: ""
+  ddnss_host_key: ""
   skip_url_validation: false
   enable_apl: false
 schema:
@@ -36,5 +41,8 @@ schema:
   ma_api_url: str
   ma_api_token: password
   skill_id: str
+  acme_email: str
+  ma_stream_upstream: str
+  ddnss_host_key: password
   skip_url_validation: bool
   enable_apl: bool
